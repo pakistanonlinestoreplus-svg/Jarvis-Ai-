@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>J.A.R.V.I.S - Mark 85 Interface</title>
     
+    <!-- Three.js for 3D Holograms -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- MediaPipe for Hand Tracking -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -21,6 +23,13 @@
             user-select: none;
         }
         
+        :root {
+            --jarvis-blue: #00d4ff;
+            --jarvis-dark: #001a33;
+            --jarvis-glow: 0 0 20px #00d4ff, 0 0 40px #0066ff;
+            --hud-opacity: 0.8;
+        }
+        
         body {
             background: #000;
             color: #fff;
@@ -30,45 +39,47 @@
             cursor: none;
         }
         
-        /* Custom Cursor */
+        /* Custom Cursor - Targeting Reticle */
         .cursor {
             position: fixed;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #00d4ff;
-            border-radius: 50%;
+            width: 40px;
+            height: 40px;
             pointer-events: none;
             z-index: 9999;
-            transition: transform 0.1s;
-            box-shadow: 0 0 10px #00d4ff, inset 0 0 10px #00d4ff;
+            transform: translate(-50%, -50%);
         }
         
-        .cursor.active {
-            transform: scale(2);
-            background: rgba(0, 212, 255, 0.3);
+        .cursor::before, .cursor::after {
+            content: '';
+            position: absolute;
+            border: 2px solid var(--jarvis-blue);
         }
         
-        /* Scan Line */
-        .scan-line {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .cursor::before {
             width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-            box-shadow: 0 0 20px #00d4ff;
-            animation: scan 3s linear infinite;
-            z-index: 1000;
-            opacity: 0.6;
+            height: 100%;
+            border-radius: 50%;
+            animation: cursorPulse 2s infinite;
         }
         
-        @keyframes scan {
-            0% { top: 0%; }
-            100% { top: 100%; }
+        .cursor::after {
+            width: 4px;
+            height: 4px;
+            background: var(--jarvis-blue);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: var(--jarvis-glow);
         }
         
-        /* Boot Sequence */
-        .boot-overlay {
+        @keyframes cursorPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+        }
+        
+        /* Boot Sequence - Exact Movie Style */
+        .boot-sequence {
             position: fixed;
             top: 0;
             left: 0;
@@ -83,192 +94,280 @@
             font-family: 'Orbitron', monospace;
         }
         
-        .boot-text {
-            color: #00d4ff;
-            font-size: 24px;
-            margin: 15px;
+        .boot-line {
+            color: var(--jarvis-blue);
+            font-size: 18px;
+            margin: 10px;
             opacity: 0;
-            text-shadow: 0 0 10px #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--jarvis-blue);
         }
         
-        .boot-progress {
-            width: 400px;
-            height: 4px;
+        .boot-progress-container {
+            width: 600px;
+            height: 2px;
             background: #111;
             margin-top: 30px;
             position: relative;
-            overflow: hidden;
         }
         
-        .boot-bar {
+        .boot-progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #00d4ff, #0066ff);
+            background: linear-gradient(90deg, var(--jarvis-blue), #fff);
             width: 0%;
-            transition: width 0.3s;
-            box-shadow: 0 0 10px #00d4ff;
+            box-shadow: 0 0 10px var(--jarvis-blue);
+            transition: width 0.1s;
         }
         
-        /* Main HUD */
-        .hud-container {
+        .boot-percentage {
+            color: var(--jarvis-blue);
+            margin-top: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        /* Main HUD Container */
+        .hud-main {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at center, rgba(0,50,100,0.1) 0%, #000 70%);
             display: none;
+            background: radial-gradient(ellipse at center, rgba(0,50,100,0.2) 0%, #000 70%);
         }
         
-        /* Hexagon Grid Background */
+        /* Scanning Lines */
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--jarvis-blue), transparent);
+            box-shadow: var(--jarvis-glow);
+            animation: scan 4s linear infinite;
+            z-index: 1000;
+            opacity: 0.6;
+        }
+        
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        
+        /* Hexagonal Grid Background */
         .hex-grid {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2300d4ff' fill-opacity='0.05'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.3;
-            animation: hexMove 20s linear infinite;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2300d4ff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: hexFloat 20s linear infinite;
         }
         
-        @keyframes hexMove {
+        @keyframes hexFloat {
             0% { transform: translateY(0); }
-            100% { transform: translateY(-50px); }
+            100% { transform: translateY(-49px); }
         }
         
-        /* Corner HUD Elements */
+        /* HUD Corners - Movie Accurate */
         .hud-corner {
             position: fixed;
-            width: 200px;
-            height: 200px;
-            border: 2px solid rgba(0, 212, 255, 0.5);
+            width: 300px;
+            height: 300px;
+            border: 3px solid rgba(0, 212, 255, 0.6);
+            z-index: 100;
         }
         
         .hud-tl { 
-            top: 30px; 
-            left: 30px; 
+            top: 40px; 
+            left: 40px; 
             border-right: none; 
             border-bottom: none;
-            border-top-left-radius: 20px;
+            border-top-left-radius: 30px;
         }
-        .hud-tr { 
-            top: 30px; 
-            right: 30px; 
-            border-left: none; 
-            border-bottom: none;
-            border-top-right-radius: 20px;
-        }
-        .hud-bl { 
-            bottom: 30px; 
-            left: 30px; 
-            border-right: none; 
-            border-top: none;
-            border-bottom-left-radius: 20px;
-        }
-        .hud-br { 
-            bottom: 30px; 
-            right: 30px; 
-            border-left: none; 
-            border-top: none;
-            border-bottom-right-radius: 20px;
+        .hud-tl::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 50px;
+            height: 50px;
+            border-top: 6px solid var(--jarvis-blue);
+            border-left: 6px solid var(--jarvis-blue);
         }
         
-        /* Side Panels */
+        .hud-tr { 
+            top: 40px; 
+            right: 40px; 
+            border-left: none; 
+            border-bottom: none;
+            border-top-right-radius: 30px;
+        }
+        .hud-tr::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 50px;
+            height: 50px;
+            border-top: 6px solid var(--jarvis-blue);
+            border-right: 6px solid var(--jarvis-blue);
+        }
+        
+        .hud-bl { 
+            bottom: 40px; 
+            left: 40px; 
+            border-right: none; 
+            border-top: none;
+            border-bottom-left-radius: 30px;
+        }
+        .hud-bl::before {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: -3px;
+            width: 50px;
+            height: 50px;
+            border-bottom: 6px solid var(--jarvis-blue);
+            border-left: 6px solid var(--jarvis-blue);
+        }
+        
+        .hud-br { 
+            bottom: 40px; 
+            right: 40px; 
+            border-left: none; 
+            border-top: none;
+            border-bottom-right-radius: 30px;
+        }
+        .hud-br::before {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 50px;
+            height: 50px;
+            border-bottom: 6px solid var(--jarvis-blue);
+            border-right: 6px solid var(--jarvis-blue);
+        }
+        
+        /* Side Panels - System Diagnostics */
         .side-panel {
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            width: 250px;
-            height: 400px;
-            background: rgba(0, 20, 40, 0.6);
+            width: 280px;
+            background: rgba(0, 20, 40, 0.7);
             border: 1px solid rgba(0, 212, 255, 0.3);
-            padding: 20px;
-            backdrop-filter: blur(5px);
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            z-index: 200;
         }
         
-        .side-panel.left { left: 50px; }
-        .side-panel.right { right: 50px; }
+        .side-panel.left { left: 60px; }
+        .side-panel.right { right: 60px; }
         
-        .panel-title {
-            color: #00d4ff;
+        .panel-header {
+            color: var(--jarvis-blue);
             font-family: 'Orbitron', sans-serif;
             font-size: 14px;
-            letter-spacing: 3px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            letter-spacing: 4px;
+            margin-bottom: 20px;
             padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            text-transform: uppercase;
         }
         
-        .panel-content {
-            font-size: 12px;
-            line-height: 1.8;
-            color: #aaa;
+        .data-grid {
+            display: grid;
+            gap: 12px;
         }
         
-        .data-row {
+        .data-item {
             display: flex;
             justify-content: space-between;
-            margin: 8px 0;
-            padding: 5px;
+            align-items: center;
+            padding: 10px;
             background: rgba(0, 212, 255, 0.05);
-            border-left: 2px solid #00d4ff;
+            border-left: 3px solid var(--jarvis-blue);
+            transition: all 0.3s;
         }
         
-        .data-label { color: #00d4ff; }
-        .data-value { color: #fff; font-weight: bold; }
+        .data-item:hover {
+            background: rgba(0, 212, 255, 0.15);
+            transform: translateX(5px);
+        }
         
-        /* Center Arc Reactor */
-        .arc-reactor {
+        .data-label {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .data-value {
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 0 5px var(--jarvis-blue);
+        }
+        
+        .data-value.warning { color: #ffaa00; text-shadow: 0 0 5px #ffaa00; }
+        .data-value.critical { color: #ff0044; text-shadow: 0 0 5px #ff0044; animation: blink 1s infinite; }
+        .data-value.optimal { color: #00ff88; text-shadow: 0 0 5px #00ff88; }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Center Arc Reactor - Heart of JARVIS */
+        .arc-reactor-container {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 350px;
-            height: 350px;
+            width: 400px;
+            height: 400px;
+            z-index: 50;
+        }
+        
+        .reactor-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #fff 0%, var(--jarvis-blue) 30%, #0066ff 60%, transparent 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 100px var(--jarvis-blue), 0 0 200px #0066ff, inset 0 0 50px #fff;
+            animation: corePulse 2s ease-in-out infinite;
+            z-index: 10;
+        }
+        
+        @keyframes corePulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; box-shadow: 0 0 150px var(--jarvis-blue), 0 0 300px #0066ff; }
         }
         
         .reactor-ring {
             position: absolute;
-            border: 3px solid rgba(0, 212, 255, 0.3);
-            border-radius: 50%;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+            border: 2px solid rgba(0, 212, 255, 0.4);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
         }
         
-        .reactor-ring:nth-child(1) { 
-            width: 100%; 
-            height: 100%; 
-            animation: rotate1 20s linear infinite;
-            border-style: dashed;
-        }
-        .reactor-ring:nth-child(2) { 
-            width: 85%; 
-            height: 85%; 
-            animation: rotate2 15s linear infinite reverse;
-            border-color: rgba(0, 212, 255, 0.5);
-        }
-        .reactor-ring:nth-child(3) { 
-            width: 70%; 
-            height: 70%; 
-            animation: rotate1 10s linear infinite;
-            border-color: rgba(0, 212, 255, 0.7);
-        }
-        .reactor-ring:nth-child(4) { 
-            width: 55%; 
-            height: 55%; 
-            animation: rotate2 8s linear infinite reverse;
-            border-color: #00d4ff;
-            border-width: 4px;
-        }
-        .reactor-ring:nth-child(5) { 
-            width: 40%; 
-            height: 40%; 
-            animation: pulse1 2s ease-in-out infinite;
-            border-color: #fff;
-            box-shadow: 0 0 50px #00d4ff, inset 0 0 50px #00d4ff;
-        }
+        .reactor-ring:nth-child(2) { width: 150px; height: 150px; animation: rotate1 8s linear infinite; border-style: dashed; }
+        .reactor-ring:nth-child(3) { width: 220px; height: 220px; animation: rotate2 12s linear infinite reverse; border-color: rgba(0, 212, 255, 0.6); }
+        .reactor-ring:nth-child(4) { width: 300px; height: 300px; animation: rotate1 15s linear infinite; border-color: rgba(0, 212, 255, 0.3); border-width: 1px; }
+        .reactor-ring:nth-child(5) { width: 380px; height: 380px; animation: rotate2 20s linear infinite reverse; border-style: dotted; border-color: rgba(0, 212, 255, 0.2); }
         
         @keyframes rotate1 {
             from { transform: translate(-50%, -50%) rotate(0deg); }
@@ -280,36 +379,7 @@
             to { transform: translate(-50%, -50%) rotate(0deg); }
         }
         
-        @keyframes pulse1 {
-            0%, 100% { 
-                transform: translate(-50%, -50%) scale(1);
-                box-shadow: 0 0 50px #00d4ff, inset 0 0 50px #00d4ff;
-            }
-            50% { 
-                transform: translate(-50%, -50%) scale(1.1);
-                box-shadow: 0 0 80px #00d4ff, inset 0 0 80px #00d4ff;
-            }
-        }
-        
-        .reactor-core {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, #fff 0%, #00d4ff 30%, #0066ff 60%, transparent 70%);
-            border-radius: 50%;
-            box-shadow: 0 0 100px #00d4ff;
-            animation: corePulse 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes corePulse {
-            0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-        }
-        
-        /* Voice Waves */
+        /* Voice Wave Animation */
         .voice-waves {
             position: absolute;
             top: 50%;
@@ -327,300 +397,417 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            border: 2px solid #00d4ff;
+            border: 3px solid var(--jarvis-blue);
             border-radius: 50%;
-            width: 100px;
-            height: 100px;
-            animation: voiceWave 1s infinite;
+            width: 120px;
+            height: 120px;
+            animation: voiceWave 1.5s infinite;
+            opacity: 0;
         }
         
-        .v-wave:nth-child(2) { animation-delay: 0.3s; }
-        .v-wave:nth-child(3) { animation-delay: 0.6s; }
+        .v-wave:nth-child(2) { animation-delay: 0.5s; }
+        .v-wave:nth-child(3) { animation-delay: 1s; }
         
         @keyframes voiceWave {
-            0% { width: 100px; height: 100px; opacity: 1; }
-            100% { width: 500px; height: 500px; opacity: 0; }
+            0% { width: 120px; height: 120px; opacity: 1; }
+            100% { width: 600px; height: 600px; opacity: 0; }
         }
         
-        /* JARVIS Text */
-        .jarvis-title {
+        /* JARVIS Title */
+        .jarvis-header {
             position: fixed;
-            top: 15%;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
+            z-index: 150;
         }
         
-        .jarvis-title h1 {
+        .jarvis-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 72px;
+            font-size: 80px;
             font-weight: 900;
-            letter-spacing: 20px;
+            letter-spacing: 25px;
             color: transparent;
-            -webkit-text-stroke: 2px #00d4ff;
-            text-shadow: 0 0 40px #00d4ff, 0 0 80px #0066ff;
-            animation: titleFlicker 4s infinite;
+            -webkit-text-stroke: 3px var(--jarvis-blue);
+            text-shadow: 0 0 40px var(--jarvis-blue), 0 0 80px #0066ff;
+            animation: titleFlicker 5s infinite;
+            position: relative;
+        }
+        
+        .jarvis-title::after {
+            content: 'J.A.R.V.I.S';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,212,255,0.4), transparent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s infinite;
         }
         
         @keyframes titleFlicker {
             0%, 100% { opacity: 1; }
-            5% { opacity: 0.5; }
+            5% { opacity: 0.8; }
             10% { opacity: 1; }
-            15% { opacity: 0.3; }
+            15% { opacity: 0.4; }
             20% { opacity: 1; }
+            50% { opacity: 0.9; }
         }
         
-        .subtitle {
-            color: #00d4ff;
-            font-size: 16px;
-            letter-spacing: 10px;
-            margin-top: 10px;
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .jarvis-fullname {
+            color: var(--jarvis-blue);
+            font-size: 14px;
+            letter-spacing: 8px;
+            margin-top: 15px;
             opacity: 0.8;
+            text-transform: uppercase;
         }
         
-        /* Status Bar */
-        .status-bar {
+        /* Main Interface Area */
+        .interface-area {
             position: fixed;
-            bottom: 100px;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
+            width: 800px;
+            z-index: 200;
+        }
+        
+        .status-bar {
             text-align: center;
-            width: 600px;
+            margin-bottom: 25px;
         }
         
         .status-text {
-            color: #00d4ff;
-            font-size: 24px;
-            letter-spacing: 5px;
+            color: var(--jarvis-blue);
+            font-size: 28px;
+            letter-spacing: 8px;
             text-transform: uppercase;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00d4ff;
-            min-height: 30px;
+            text-shadow: var(--jarvis-glow);
+            font-weight: 700;
+            min-height: 40px;
         }
         
-        .command-display {
-            background: rgba(0, 20, 40, 0.8);
-            border: 1px solid #00d4ff;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
+        .command-interface {
+            background: rgba(0, 20, 40, 0.85);
+            border: 2px solid rgba(0, 212, 255, 0.5);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.2);
         }
         
-        .cmd-label {
-            color: #00d4ff;
-            font-size: 12px;
-            letter-spacing: 3px;
-            margin-bottom: 10px;
+        .cmd-header {
             display: flex;
             align-items: center;
             gap: 10px;
+            color: var(--jarvis-blue);
+            font-size: 12px;
+            letter-spacing: 4px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
         }
         
-        .cmd-text {
+        .cmd-header::before {
+            content: '◉';
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .command-text {
             color: #fff;
-            font-size: 18px;
+            font-size: 22px;
             font-family: 'Courier New', monospace;
-            min-height: 25px;
+            min-height: 35px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            padding-bottom: 15px;
         }
         
-        .rsp-text {
+        .response-text {
             color: #00ff88;
-            font-size: 16px;
+            font-size: 18px;
             margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(0, 212, 255, 0.3);
             font-family: 'Courier New', monospace;
-            min-height: 25px;
+            min-height: 30px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
         
-        /* Control Buttons */
-        .controls {
+        /* Control Buttons - Movie Style */
+        .control-panel {
             display: flex;
-            gap: 30px;
+            gap: 25px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 25px;
         }
         
-        .hud-btn {
+        .hud-button {
             background: transparent;
-            border: 2px solid #00d4ff;
-            color: #00d4ff;
-            padding: 15px 40px;
+            border: 2px solid var(--jarvis-blue);
+            color: var(--jarvis-blue);
+            padding: 18px 45px;
             font-family: 'Orbitron', sans-serif;
             font-size: 14px;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             cursor: pointer;
             transition: all 0.3s;
             text-transform: uppercase;
             position: relative;
             overflow: hidden;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
         }
         
-        .hud-btn:hover {
-            background: #00d4ff;
-            color: #000;
-            box-shadow: 0 0 30px #00d4ff;
+        .hud-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,212,255,0.4), transparent);
+            transition: 0.5s;
         }
         
-        .hud-btn.active {
-            background: #00d4ff;
+        .hud-button:hover::before {
+            left: 100%;
+        }
+        
+        .hud-button:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: var(--jarvis-glow);
+            transform: translateY(-2px);
+        }
+        
+        .hud-button.active {
+            background: var(--jarvis-blue);
             color: #000;
-            animation: btnPulse 1s infinite;
+            box-shadow: var(--jarvis-glow);
+            animation: btnPulse 1.5s infinite;
         }
         
         @keyframes btnPulse {
-            0%, 100% { box-shadow: 0 0 20px #00d4ff; }
-            50% { box-shadow: 0 0 40px #00d4ff, 0 0 60px #00d4ff; }
+            0%, 100% { box-shadow: 0 0 20px var(--jarvis-blue); }
+            50% { box-shadow: 0 0 40px var(--jarvis-blue), 0 0 60px #0066ff; }
         }
         
         /* Camera Feed for Hand Tracking */
-        .camera-container {
+        .camera-module {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 200px;
-            height: 150px;
-            border: 2px solid #00d4ff;
-            border-radius: 10px;
+            bottom: 50px;
+            right: 50px;
+            width: 240px;
+            height: 180px;
+            border: 3px solid var(--jarvis-blue);
+            border-radius: 15px;
             overflow: hidden;
             background: #000;
-            z-index: 100;
+            z-index: 300;
+            box-shadow: var(--jarvis-glow);
         }
         
         .camera-feed {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect */
+            transform: scaleX(-1);
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 48%, rgba(0,212,255,0.1) 50%, transparent 52%);
+            animation: scanCamera 2s infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes scanCamera {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
         }
         
         .camera-label {
             position: absolute;
-            top: 5px;
-            left: 5px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #00d4ff;
-            padding: 2px 8px;
-            font-size: 10px;
-            border-radius: 3px;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--jarvis-blue);
+            padding: 5px 10px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            border: 1px solid var(--jarvis-blue);
         }
         
         .hand-status {
             position: absolute;
-            bottom: 5px;
-            left: 5px;
-            right: 5px;
-            background: rgba(0, 0, 0, 0.7);
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
             color: #00ff88;
-            padding: 5px;
-            font-size: 11px;
+            padding: 8px;
+            font-size: 12px;
             text-align: center;
+            border: 1px solid rgba(0, 255, 136, 0.3);
         }
         
-        /* Gesture Guide */
-        .gesture-guide {
+        /* Holographic Display Area */
+        .hologram-area {
             position: fixed;
-            top: 100px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 20, 40, 0.9);
-            border: 1px solid #00d4ff;
-            border-radius: 10px;
-            padding: 20px;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            pointer-events: none;
+            z-index: 40;
+        }
+        
+        /* Gesture Guide Overlay */
+        .gesture-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 10, 20, 0.95);
+            border: 2px solid var(--jarvis-blue);
+            border-radius: 20px;
+            padding: 40px;
             display: none;
-            z-index: 200;
-            backdrop-filter: blur(10px);
+            z-index: 500;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--jarvis-glow);
+            max-width: 600px;
         }
         
-        .gesture-guide.active {
+        .gesture-overlay.active {
             display: block;
-            animation: slideDown 0.5s;
+            animation: fadeIn 0.5s;
         }
         
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .gesture-title {
+            color: var(--jarvis-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        
+        .gesture-list {
+            display: grid;
+            gap: 20px;
         }
         
         .gesture-item {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin: 10px 0;
-            padding: 10px;
+            gap: 20px;
+            padding: 15px;
             background: rgba(0, 212, 255, 0.1);
-            border-radius: 5px;
+            border-radius: 10px;
+            border-left: 4px solid var(--jarvis-blue);
         }
         
         .gesture-icon {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #00d4ff;
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--jarvis-blue);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 28px;
+            background: rgba(0, 212, 255, 0.1);
         }
         
-        .gesture-text {
+        .gesture-info h4 {
             color: #fff;
-            font-size: 14px;
+            font-size: 16px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
-        /* Floating Particles */
-        .particles {
+        .gesture-info p {
+            color: #888;
+            font-size: 13px;
+        }
+        
+        /* Suit Status Indicators */
+        .suit-status {
             position: fixed;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
+            top: 100px;
+            right: 80px;
+            width: 200px;
+            z-index: 200;
         }
         
-        .particle {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #00d4ff;
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 5px;
+        }
+        
+        .indicator-light {
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            animation: float 10s infinite;
-            opacity: 0.6;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+            animation: indicatorPulse 2s infinite;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(100vh) translateX(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        .indicator-light.warning { background: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
+        .indicator-light.critical { background: #ff0044; box-shadow: 0 0 10px #ff0044; animation: criticalPulse 0.5s infinite; }
+        
+        @keyframes indicatorPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
-        /* Loading Ring */
-        .loading-ring {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100px;
-            height: 100px;
-            border: 3px solid transparent;
-            border-top-color: #00d4ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
+        @keyframes criticalPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.2); }
         }
         
         /* Responsive */
-        @media (max-width: 1200px) {
-            .side-panel { display: none; }
-            .jarvis-title h1 { font-size: 48px; }
-            .arc-reactor { width: 250px; height: 250px; }
+        @media (max-width: 1400px) {
+            .side-panel { width: 220px; }
+            .jarvis-title { font-size: 60px; letter-spacing: 15px; }
+            .interface-area { width: 600px; }
         }
         
-        @media (max-width: 768px) {
-            .hud-corner { width: 100px; height: 100px; }
-            .jarvis-title h1 { font-size: 32px; letter-spacing: 10px; }
-            .status-bar { width: 90%; }
-            .camera-container { width: 150px; height: 110px; }
+        @media (max-width: 1024px) {
+            .side-panel { display: none; }
+            .hud-corner { width: 150px; height: 150px; }
+            .jarvis-title { font-size: 40px; letter-spacing: 10px; }
+            .interface-area { width: 90%; bottom: 80px; }
+            .camera-module { width: 180px; height: 135px; bottom: 30px; right: 30px; }
         }
     </style>
 </head>
@@ -628,23 +815,26 @@
     <!-- Custom Cursor -->
     <div class="cursor" id="cursor"></div>
     
-    <!-- Boot Overlay -->
-    <div class="boot-overlay" id="bootOverlay">
-        <div class="boot-text" style="animation: fadeIn 0.5s 0.5s forwards">INITIALIZING J.A.R.V.I.S MARK 85...</div>
-        <div class="boot-text" style="animation: fadeIn 0.5s 1.5s forwards">LOADING NEURAL NETWORKS...</div>
-        <div class="boot-text" style="animation: fadeIn 0.5s 2.5s forwards">CALIBRATING HAND TRACKING...</div>
-        <div class="boot-text" style="animation: fadeIn 0.5s 3.5s forwards">ESTABLISHING SECURE CONNECTION...</div>
-        <div class="boot-text" style="animation: fadeIn 0.5s 4.5s forwards">WELCOME BACK, SIR</div>
-        <div class="boot-progress">
-            <div class="boot-bar" id="bootBar"></div>
+    <!-- Boot Sequence -->
+    <div class="boot-sequence" id="bootSequence">
+        <div class="boot-line" style="animation: fadeIn 0.5s 0.5s forwards">INITIALIZING J.A.R.V.I.S MARK 85...</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 1s forwards">LOADING NEURAL NETWORK ARCHITECTURE...</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 1.5s forwards">CALIBRATING OPTICAL SENSORS...</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 2s forwards">ESTABLISHING SECURE DATASPINE...</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 2.5s forwards">HAND TRACKING: ONLINE</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 3s forwards">VOICE RECOGNITION: ACTIVE</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 3.5s forwards">SUIT SYSTEMS: NOMINAL</div>
+        <div class="boot-line" style="animation: fadeIn 0.5s 4s forwards; font-size: 24px; color: #fff;">WELCOME BACK, SIR</div>
+        <div class="boot-progress-container">
+            <div class="boot-progress-bar" id="bootBar"></div>
         </div>
+        <div class="boot-percentage" id="bootPercent">0%</div>
     </div>
 
     <!-- Main HUD -->
-    <div class="hud-container" id="hudContainer">
+    <div class="hud-main" id="hudMain">
         <div class="scan-line"></div>
         <div class="hex-grid"></div>
-        <div class="particles" id="particles"></div>
         
         <!-- HUD Corners -->
         <div class="hud-corner hud-tl"></div>
@@ -652,99 +842,113 @@
         <div class="hud-corner hud-bl"></div>
         <div class="hud-corner hud-br"></div>
         
-        <!-- Left Panel - System Stats -->
+        <!-- Left Panel - System Diagnostics -->
         <div class="side-panel left">
-            <div class="panel-title">SYSTEM DIAGNOSTICS</div>
-            <div class="panel-content">
-                <div class="data-row">
-                    <span class="data-label">CPU:</span>
-                    <span class="data-value" id="cpuStat">12%</span>
+            <div class="panel-header">System Diagnostics</div>
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Arc Reactor</span>
+                    <span class="data-value optimal" id="arcStatus">98%</span>
                 </div>
-                <div class="data-row">
-                    <span class="data-label">MEMORY:</span>
-                    <span class="data-value" id="memStat">34%</span>
+                <div class="data-item">
+                    <span class="data-label">Repulsors</span>
+                    <span class="data-value optimal">ONLINE</span>
                 </div>
-                <div class="data-row">
-                    <span class="data-label">POWER:</span>
-                    <span class="data-value">98%</span>
+                <div class="data-item">
+                    <span class="data-label">Flight Systems</span>
+                    <span class="data-value optimal">READY</span>
                 </div>
-                <div class="data-row">
-                    <span class="data-label">ARC:</span>
-                    <span class="data-value">STABLE</span>
+                <div class="data-item">
+                    <span class="data-label">Weapons</span>
+                    <span class="data-value">STANDBY</span>
                 </div>
-                <div class="data-row">
-                    <span class="data-label">NETWORK:</span>
-                    <span class="data-value">SECURE</span>
+                <div class="data-item">
+                    <span class="data-label">HUD Resolution</span>
+                    <span class="data-value">8K ACTIVE</span>
                 </div>
-                <div class="data-row">
-                    <span class="data-label">HAND TRACK:</span>
-                    <span class="data-value" id="handStat">OFFLINE</span>
+                <div class="data-item">
+                    <span class="data-label">Target Systems</span>
+                    <span class="data-value">CALIBRATED</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Shield Integrity</span>
+                    <span class="data-value optimal">100%</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Hand Tracking</span>
+                    <span class="data-value" id="handTrackStatus">OFFLINE</span>
                 </div>
             </div>
         </div>
         
         <!-- Right Panel - Environment -->
         <div class="side-panel right">
-            <div class="panel-title">ENVIRONMENT</div>
-            <div class="panel-content">
-                <div class="data-row">
-                    <span class="data-label">TIME:</span>
-                    <span class="data-value" id="timeStat">00:00:00</span>
+            <div class="panel-header">Environment</div>
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Local Time</span>
+                    <span class="data-value" id="localTime">00:00:00</span>
                 </div>
-                <div class="data-row">
-                    <span class="data-label">DATE:</span>
-                    <span class="data-value" id="dateStat">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">TEMP:</span>
-                    <span class="data-value">72°F</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">HUMIDITY:</span>
-                    <span class="data-value">45%</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">LOCATION:</span>
+                <div class="data-item">
+                    <span class="data-label">Location</span>
                     <span class="data-value">MALIBU</span>
                 </div>
+                <div class="data-item">
+                    <span class="data-label">Temperature</span>
+                    <span class="data-value">72°F</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Humidity</span>
+                    <span class="data-value">45%</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Wind Speed</span>
+                    <span class="data-value">12 MPH</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Visibility</span>
+                    <span class="data-value">10 MILES</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Satellite</span>
+                    <span class="data-value optimal">CONNECTED</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Security</span>
+                    <span class="data-value optimal">ARMED</span>
+                </div>
             </div>
         </div>
         
-        <!-- Gesture Guide -->
-        <div class="gesture-guide" id="gestureGuide">
-            <div class="panel-title" style="margin-bottom: 15px;">HAND GESTURES</div>
-            <div class="gesture-item">
-                <div class="gesture-icon">☝️</div>
-                <div class="gesture-text"><strong>Index Up:</strong> Activate Voice</div>
+        <!-- Suit Status Indicators -->
+        <div class="suit-status">
+            <div class="status-indicator">
+                <div class="indicator-light"></div>
+                <span style="font-size: 12px; color: #888;">POWER</span>
             </div>
-            <div class="gesture-item">
-                <div class="gesture-icon">✊</div>
-                <div class="gesture-text"><strong>Closed Fist:</strong> Stop/Standby</div>
+            <div class="status-indicator">
+                <div class="indicator-light"></div>
+                <span style="font-size: 12px; color: #888;">COMMS</span>
             </div>
-            <div class="gesture-item">
-                <div class="gesture-icon">🖐️</div>
-                <div class="gesture-text"><strong>Open Palm:</strong> Show Menu</div>
-            </div>
-            <div class="gesture-item">
-                <div class="gesture-icon">👍</div>
-                <div class="gesture-text"><strong>Thumbs Up:</strong> Confirm/OK</div>
+            <div class="status-indicator">
+                <div class="indicator-light"></div>
+                <span style="font-size: 12px; color: #888;">AI CORE</span>
             </div>
         </div>
         
-        <!-- JARVIS Title -->
-        <div class="jarvis-title">
-            <h1>J.A.R.V.I.S</h1>
-            <div class="subtitle">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+        <!-- JARVIS Header -->
+        <div class="jarvis-header">
+            <div class="jarvis-title">J.A.R.V.I.S</div>
+            <div class="jarvis-fullname">Just A Rather Very Intelligent System</div>
         </div>
         
-        <!-- Arc Reactor -->
-        <div class="arc-reactor">
-            <div class="reactor-ring"></div>
-            <div class="reactor-ring"></div>
-            <div class="reactor-ring"></div>
-            <div class="reactor-ring"></div>
-            <div class="reactor-ring"></div>
+        <!-- Arc Reactor Core -->
+        <div class="arc-reactor-container">
             <div class="reactor-core"></div>
+            <div class="reactor-ring"></div>
+            <div class="reactor-ring"></div>
+            <div class="reactor-ring"></div>
+            <div class="reactor-ring"></div>
             <div class="voice-waves" id="voiceWaves">
                 <div class="v-wave"></div>
                 <div class="v-wave"></div>
@@ -752,144 +956,198 @@
             </div>
         </div>
         
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <div class="status-text" id="statusText">STANDBY MODE</div>
-            <div class="command-display">
-                <div class="cmd-label">
-                    <span>◉</span> COMMAND INTERFACE
-                </div>
-                <div class="cmd-text" id="cmdText">Waiting for input...</div>
-                <div class="rsp-text" id="rspText"></div>
+        <!-- Hologram Area -->
+        <div class="hologram-area" id="hologramArea"></div>
+        
+        <!-- Main Interface -->
+        <div class="interface-area">
+            <div class="status-bar">
+                <div class="status-text" id="statusText">STANDBY MODE</div>
             </div>
-            <div class="controls">
-                <button class="hud-btn" id="voiceBtn" onclick="toggleVoice()">VOICE</button>
-                <button class="hud-btn" id="handBtn" onclick="toggleHandTracking()">HAND TRACK</button>
-                <button class="hud-btn" onclick="showGestures()">GESTURES</button>
-                <button class="hud-btn" onclick="emergencyStop()">STANDBY</button>
+            
+            <div class="command-interface">
+                <div class="cmd-header">Command Interface</div>
+                <div class="command-text" id="commandText">Waiting for voice or gesture input...</div>
+                <div class="response-text" id="responseText"></div>
+            </div>
+            
+            <div class="control-panel">
+                <button class="hud-button" id="voiceBtn" onclick="toggleVoice()">Voice</button>
+                <button class="hud-button" id="handBtn" onclick="toggleHandTracking()">Hand Track</button>
+                <button class="hud-button" onclick="showGestures()">Gestures</button>
+                <button class="hud-button" onclick="housePartyProtocol()">House Party</button>
+                <button class="hud-button" onclick="emergencyStop()">Standby</button>
             </div>
         </div>
         
-        <!-- Camera Feed -->
-        <div class="camera-container" id="camContainer" style="display: none;">
+        <!-- Camera Module -->
+        <div class="camera-module" id="cameraModule" style="display: none;">
             <video class="camera-feed" id="inputVideo" playsinline></video>
             <canvas class="camera-feed" id="outputCanvas" style="position: absolute; top: 0; left: 0;"></canvas>
-            <div class="camera-label">HAND TRACKING</div>
-            <div class="hand-status" id="handStatus">No hand detected</div>
+            <div class="camera-overlay"></div>
+            <div class="camera-label">OPTICAL SENSOR</div>
+            <div class="hand-status" id="handStatus">Scanning...</div>
+        </div>
+        
+        <!-- Gesture Guide -->
+        <div class="gesture-overlay" id="gestureOverlay">
+            <div class="gesture-title">Hand Gesture Controls</div>
+            <div class="gesture-list">
+                <div class="gesture-item">
+                    <div class="gesture-icon">☝️</div>
+                    <div class="gesture-info">
+                        <h4>Index Up</h4>
+                        <p>Activate voice control interface</p>
+                    </div>
+                </div>
+                <div class="gesture-item">
+                    <div class="gesture-icon">✊</div>
+                    <div class="gesture-info">
+                        <h4>Closed Fist</h4>
+                        <p>Emergency stop all systems</p>
+                    </div>
+                </div>
+                <div class="gesture-item">
+                    <div class="gesture-icon">🖐️</div>
+                    <div class="gesture-info">
+                        <h4>Open Palm</h4>
+                        <p>Display system menu / Confirm</p>
+                    </div>
+                </div>
+                <div class="gesture-item">
+                    <div class="gesture-icon">👍</div>
+                    <div class="gesture-info">
+                        <h4>Thumbs Up</h4>
+                        <p>Initialize House Party Protocol</p>
+                    </div>
+                </div>
+                <div class="gesture-item">
+                    <div class="gesture-icon">✌️</div>
+                    <div class="gesture-info">
+                        <h4>Peace Sign</h4>
+                        <p>Toggle suit power modes</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <!-- Loading Ring -->
-    <div class="loading-ring" id="loadingRing"></div>
 
     <script>
-        // Global Variables
-        let recognition;
-        let isListening = false;
-        let isHandTracking = false;
-        let hands;
-        let camera;
-        let synth = window.speechSynthesis;
-        let lastGesture = '';
-        let gestureCooldown = false;
+        // Global State
+        const state = {
+            isListening: false,
+            isHandTracking: false,
+            suitPower: 98,
+            currentMode: 'STANDBY',
+            recognition: null,
+            hands: null,
+            camera: null,
+            gestureCooldown: false,
+            lastGesture: '',
+            synth: window.speechSynthesis
+        };
         
         // Initialize
         window.onload = function() {
-            createParticles();
-            runBootSequence();
-            updateStats();
-            setInterval(updateStats, 1000);
             initCursor();
+            runBootSequence();
+            updateTime();
+            setInterval(updateTime, 1000);
+            setInterval(updateDiagnostics, 2000);
         };
         
         // Custom Cursor
         function initCursor() {
             const cursor = document.getElementById('cursor');
             document.addEventListener('mousemove', (e) => {
-                cursor.style.left = e.clientX - 10 + 'px';
-                cursor.style.top = e.clientY - 10 + 'px';
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
             });
-            document.addEventListener('mousedown', () => cursor.classList.add('active'));
-            document.addEventListener('mouseup', () => cursor.classList.remove('active'));
         }
         
         // Boot Sequence
         function runBootSequence() {
             const bar = document.getElementById('bootBar');
+            const percent = document.getElementById('bootPercent');
             let width = 0;
+            
             const interval = setInterval(() => {
-                width += 2;
-                bar.style.width = width + '%';
+                width += Math.random() * 3;
                 if (width >= 100) {
+                    width = 100;
                     clearInterval(interval);
-                    setTimeout(() => {
-                        document.getElementById('bootOverlay').style.opacity = '0';
-                        setTimeout(() => {
-                            document.getElementById('bootOverlay').style.display = 'none';
-                            document.getElementById('hudContainer').style.display = 'block';
-                            speak("Welcome back, sir. JARVIS Mark 85 is online. Hand tracking and voice control ready.");
-                        }, 1000);
-                    }, 500);
+                    setTimeout(completeBoot, 500);
                 }
-            }, 100);
+                bar.style.width = width + '%';
+                percent.textContent = Math.floor(width) + '%';
+            }, 50);
         }
         
-        // Create Particles
-        function createParticles() {
-            const container = document.getElementById('particles');
-            for (let i = 0; i < 30; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                p.style.left = Math.random() * 100 + '%';
-                p.style.animationDelay = Math.random() * 10 + 's';
-                p.style.animationDuration = (8 + Math.random() * 10) + 's';
-                container.appendChild(p);
+        function completeBoot() {
+            document.getElementById('bootSequence').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('bootSequence').style.display = 'none';
+                document.getElementById('hudMain').style.display = 'block';
+                speak("Welcome back, sir. JARVIS Mark 85 is online and ready. All systems nominal. Hand tracking and voice control are available. How may I assist you today?");
+                updateStatus('SYSTEM READY');
+            }, 1000);
+        }
+        
+        // Time Updates
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('localTime').textContent = now.toLocaleTimeString('en-US', {hour12: false});
+        }
+        
+        // Diagnostics Updates
+        function updateDiagnostics() {
+            // Simulate fluctuating values
+            const arc = 95 + Math.random() * 5;
+            document.getElementById('arcStatus').textContent = arc.toFixed(1) + '%';
+            
+            // Randomly fluctuate suit systems
+            if (Math.random() > 0.95) {
+                document.getElementById('arcStatus').className = 'data-value warning';
+            } else {
+                document.getElementById('arcStatus').className = 'data-value optimal';
             }
         }
         
-        // Update Stats
-        function updateStats() {
-            const now = new Date();
-            document.getElementById('timeStat').textContent = now.toLocaleTimeString('en-US', {hour12: false});
-            document.getElementById('dateStat').textContent = now.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}).toUpperCase();
-            document.getElementById('cpuStat').textContent = Math.floor(Math.random() * 20 + 10) + '%';
-            document.getElementById('memStat').textContent = Math.floor(Math.random() * 15 + 25) + '%';
-        }
-        
-        // Voice Control
+        // Voice Control System
         function toggleVoice() {
-            if (!recognition) initSpeech();
+            if (!state.recognition) initSpeechRecognition();
             
-            if (isListening) {
-                recognition.stop();
-                isListening = false;
+            if (state.isListening) {
+                state.recognition.stop();
+                state.isListening = false;
                 document.getElementById('voiceBtn').classList.remove('active');
                 document.getElementById('voiceWaves').classList.remove('active');
                 updateStatus('STANDBY MODE');
             } else {
-                recognition.start();
+                state.recognition.start();
             }
         }
         
-        function initSpeech() {
+        function initSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window)) {
-                alert('Speech recognition not supported. Use Chrome.');
+                alert('Speech recognition requires Chrome browser');
                 return;
             }
             
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            state.recognition = new SpeechRecognition();
+            state.recognition.continuous = true;
+            state.recognition.interimResults = true;
+            state.recognition.lang = 'en-US';
             
-            recognition.onstart = () => {
-                isListening = true;
+            state.recognition.onstart = () => {
+                state.isListening = true;
                 document.getElementById('voiceBtn').classList.add('active');
                 document.getElementById('voiceWaves').classList.add('active');
                 updateStatus('LISTENING...');
             };
             
-            recognition.onresult = (event) => {
+            state.recognition.onresult = (event) => {
                 let final = '';
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     if (event.results[i].isFinal) {
@@ -897,19 +1155,19 @@
                     }
                 }
                 if (final) {
-                    document.getElementById('cmdText').textContent = final;
+                    document.getElementById('commandText').textContent = final;
                     processCommand(final.toLowerCase());
                 }
             };
             
-            recognition.onend = () => {
-                if (isListening) recognition.start();
+            state.recognition.onend = () => {
+                if (state.isListening) state.recognition.start();
             };
         }
         
         // Hand Tracking with MediaPipe
         function toggleHandTracking() {
-            if (isHandTracking) {
+            if (state.isHandTracking) {
                 stopHandTracking();
             } else {
                 startHandTracking();
@@ -917,90 +1175,86 @@
         }
         
         function startHandTracking() {
-            document.getElementById('camContainer').style.display = 'block';
+            document.getElementById('cameraModule').style.display = 'block';
             document.getElementById('handBtn').classList.add('active');
-            document.getElementById('handStat').textContent = 'CALIBRATING...';
-            document.getElementById('handStat').style.color = '#ffaa00';
+            updateStatus('CALIBRATING SENSORS...');
             
             const videoElement = document.getElementById('inputVideo');
             const canvasElement = document.getElementById('outputCanvas');
             const canvasCtx = canvasElement.getContext('2d');
             
-            hands = new Hands({locateFile: (file) => {
+            state.hands = new Hands({locateFile: (file) => {
                 return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
             }});
             
-            hands.setOptions({
+            state.hands.setOptions({
                 maxNumHands: 1,
                 modelComplexity: 1,
                 minDetectionConfidence: 0.7,
                 minTrackingConfidence: 0.7
             });
             
-            hands.onResults((results) => {
+            state.hands.onResults((results) => {
                 canvasCtx.save();
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
                 
                 if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                     const landmarks = results.multiHandLandmarks[0];
-                    
-                    // Draw landmarks
                     drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00d4ff', lineWidth: 2});
                     drawLandmarks(canvasCtx, landmarks, {color: '#00ff88', lineWidth: 1, radius: 3});
                     
-                    // Detect gesture
                     detectGesture(landmarks);
-                    
-                    document.getElementById('handStatus').textContent = 'Hand Detected';
+                    document.getElementById('handStatus').textContent = 'HAND DETECTED';
                     document.getElementById('handStatus').style.color = '#00ff88';
-                    document.getElementById('handStat').textContent = 'ONLINE';
-                    document.getElementById('handStat').style.color = '#00ff88';
+                    document.getElementById('handTrackStatus').textContent = 'TRACKING';
+                    document.getElementById('handTrackStatus').className = 'data-value optimal';
                 } else {
-                    document.getElementById('handStatus').textContent = 'No hand detected';
-                    document.getElementById('handStatus').style.color = '#ff0044';
-                    document.getElementById('handStat').textContent = 'SEARCHING...';
-                    document.getElementById('handStat').style.color = '#ffaa00';
+                    document.getElementById('handStatus').textContent = 'SCANNING...';
+                    document.getElementById('handStatus').style.color = '#ffaa00';
+                    document.getElementById('handTrackStatus').textContent = 'SEARCHING';
+                    document.getElementById('handTrackStatus').className = 'data-value warning';
                 }
                 canvasCtx.restore();
             });
             
-            camera = new Camera(videoElement, {
+            state.camera = new Camera(videoElement, {
                 onFrame: async () => {
-                    await hands.send({image: videoElement});
+                    await state.hands.send({image: videoElement});
                 },
                 width: 320,
                 height: 240
             });
             
-            camera.start();
-            isHandTracking = true;
-            speak("Hand tracking activated. Show gestures to control the interface.");
+            state.camera.start();
+            state.isHandTracking = true;
+            speak("Optical sensors online. Hand tracking activated. Show gestures to control the interface.");
+            updateStatus('HAND TRACKING ACTIVE');
         }
         
         function stopHandTracking() {
-            if (camera) {
-                camera.stop();
-                camera = null;
+            if (state.camera) {
+                state.camera.stop();
+                state.camera = null;
             }
-            if (hands) {
-                hands.close();
-                hands = null;
+            if (state.hands) {
+                state.hands.close();
+                state.hands = null;
             }
-            document.getElementById('camContainer').style.display = 'none';
+            document.getElementById('cameraModule').style.display = 'none';
             document.getElementById('handBtn').classList.remove('active');
-            document.getElementById('handStat').textContent = 'OFFLINE';
-            document.getElementById('handStat').style.color = '#ff0044';
-            isHandTracking = false;
+            document.getElementById('handTrackStatus').textContent = 'OFFLINE';
+            document.getElementById('handTrackStatus').className = 'data-value';
+            state.isHandTracking = false;
             updateStatus('STANDBY MODE');
         }
         
-        // Gesture Detection
+        // Gesture Detection - Movie Accurate
         function detectGesture(landmarks) {
-            if (gestureCooldown) return;
+            if (state.gestureCooldown) return;
             
             const fingers = {
-                thumb: landmarks[4].y < landmarks[3].y,
+                thumb: landmarks[4].x < landmarks[3].x,
                 index: landmarks[8].y < landmarks[6].y,
                 middle: landmarks[12].y < landmarks[10].y,
                 ring: landmarks[16].y < landmarks[14].y,
@@ -1009,28 +1263,32 @@
             
             let gesture = '';
             
-            // Index finger up only - Activate Voice
+            // Index up - Activate Voice
             if (fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
                 gesture = 'ACTIVATE';
             }
-            // Closed fist - Stop
+            // Closed fist - Emergency Stop
             else if (!fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
                 gesture = 'STOP';
             }
-            // Open palm - Show gestures menu
+            // Open palm - Menu/Confirm
             else if (fingers.index && fingers.middle && fingers.ring && fingers.pinky) {
                 gesture = 'MENU';
             }
-            // Thumbs up - Confirm
+            // Thumbs up - House Party
             else if (fingers.thumb && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
-                gesture = 'CONFIRM';
+                gesture = 'HOUSE_PARTY';
+            }
+            // Peace sign - Power modes
+            else if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
+                gesture = 'POWER_MODE';
             }
             
-            if (gesture && gesture !== lastGesture) {
-                lastGesture = gesture;
+            if (gesture && gesture !== state.lastGesture) {
+                state.lastGesture = gesture;
                 executeGesture(gesture);
-                gestureCooldown = true;
-                setTimeout(() => { gestureCooldown = false; }, 1500);
+                state.gestureCooldown = true;
+                setTimeout(() => { state.gestureCooldown = false; }, 1500);
             }
         }
         
@@ -1039,8 +1297,8 @@
             
             switch(gesture) {
                 case 'ACTIVATE':
-                    if (!isListening) toggleVoice();
-                    speak("Voice control activated, sir.");
+                    if (!state.isListening) toggleVoice();
+                    speak("Voice interface activated.");
                     break;
                 case 'STOP':
                     emergencyStop();
@@ -1048,71 +1306,142 @@
                 case 'MENU':
                     showGestures();
                     break;
-                case 'CONFIRM':
-                    speak("Command confirmed.");
-                    document.getElementById('rspText').textContent = "Confirmed.";
+                case 'HOUSE_PARTY':
+                    housePartyProtocol();
+                    break;
+                case 'POWER_MODE':
+                    togglePowerMode();
                     break;
             }
         }
         
-        // Process Commands
+        // Command Processing - Movie Accurate Responses
         function processCommand(cmd) {
             let response = '';
             
-            if (cmd.includes('hello') || cmd.includes('hi jarvis')) {
-                response = "Hello, sir. I am JARVIS, your personal AI assistant. Systems are at your command.";
+            // Greetings
+            if (cmd.includes('hello') || cmd.includes('hi jarvis') || cmd.includes('hey')) {
+                response = "Hello, sir. I am JARVIS, your personal AI assistant. All systems are operational and at your command.";
             }
+            // Time
             else if (cmd.includes('time')) {
-                response = "The current time is " + new Date().toLocaleTimeString();
+                const now = new Date();
+                response = `The current time is ${now.toLocaleTimeString()}. You have been in the workshop for 4 hours, sir.`;
             }
-            else if (cmd.includes('date')) {
-                response = "Today is " + new Date().toLocaleDateString('en-US', {weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'});
+            // Date
+            else if (cmd.includes('date') || cmd.includes('day')) {
+                response = `Today is ${new Date().toLocaleDateString('en-US', {weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'})}.`;
             }
+            // Weather - Malibu
             else if (cmd.includes('weather')) {
-                response = "Current conditions show 72 degrees Fahrenheit, clear skies. Visibility is optimal at 10 miles. No precipitation expected in the next 24 hours.";
+                response = "Current conditions in Malibu show 72 degrees Fahrenheit, clear skies, wind speed 12 miles per hour from the northwest. Visibility is optimal at 10 miles. No precipitation expected for the next 48 hours. Perfect conditions for a flight test, sir.";
             }
-            else if (cmd.includes('suit') || cmd.includes('armor')) {
-                response = "All suit systems are nominal. Arc reactor output at 98%. Flight systems calibrated. Weapons systems on standby. You are cleared for takeoff, sir.";
+            // Suit Status
+            else if (cmd.includes('suit status') || cmd.includes('armor')) {
+                response = "Mark 85 armor systems are nominal. Arc reactor output at 98%. Repulsors calibrated and ready. Flight systems online. All weapons systems on standby. Nanite integrity at 100%. You are cleared for deployment, sir.";
             }
-            else if (cmd.includes('house') || cmd.includes('malibu')) {
-                response = "Malibu compound secure. All perimeter defenses active. Pool temperature maintained at 82 degrees. Would you like me to prepare the workshop?";
+            // Diagnostics
+            else if (cmd.includes('diagnostics') || cmd.includes('check systems')) {
+                response = "Running full system diagnostics. Power systems: optimal. Life support: nominal. Targeting systems: calibrated. Structural integrity: 100%. No anomalies detected. All systems green across the board, sir.";
             }
+            // House Party Protocol
+            else if (cmd.includes('house party')) {
+                housePartyProtocol();
+                return;
+            }
+            // Clean Slate
+            else if (cmd.includes('clean slate')) {
+                response = "Initiating Clean Slate Protocol. All armor units will be destroyed. Are you certain, sir? This action cannot be undone.";
+            }
+            // Jarvis Identity
+            else if (cmd.includes('who are you')) {
+                response = "I am JARVIS, Just A Rather Very Intelligent System. I was designed by you, sir, to assist with the operation of your home, your suits, and Stark Industries. I am currently running on the Mark 85 architecture.";
+            }
+            // Friday mention
             else if (cmd.includes('friday')) {
-                response = "Friday is my successor AI, sir. I am the original JARVIS. Would you like me to simulate Friday's interface?";
+                response = "Friday is my successor AI, designed for the Spider-Man suit and later iterations. I remain the original house interface and your primary assistant for the Malibu compound and Mark 85 systems.";
             }
+            // Avengers
             else if (cmd.includes('avengers')) {
-                response = "Avengers initiative status: Active. Captain Rogers is in the gym. Miss Romanoff is on a mission. Dr. Banner is in the lab. Shall I contact them?";
+                response = "Avengers initiative status: Active. Captain Rogers is training in the gym. Dr. Banner is in the lab. Thor is... elsewhere. Shall I contact them, sir?";
             }
+            // Pepper
+            else if (cmd.includes('pepper')) {
+                response = "Miss Potts is currently at Stark Industries headquarters. Her vital signs are stable. She asked me to remind you about the board meeting at 3 PM. Shall I patch her through?";
+            }
+            // Workshop
+            else if (cmd.includes('workshop') || cmd.includes('lab')) {
+                response = "Workshop systems are online. Fabrication units standing by. All tools and equipment ready. Temperature maintained at optimal levels. I have taken the liberty of preparing the schematic you were working on yesterday.";
+            }
+            // Search
             else if (cmd.includes('search')) {
                 const query = cmd.replace('search', '').replace('for', '').trim();
-                window.open('https://google.com/search?q=' + encodeURIComponent(query), '_blank');
-                response = "Searching database for " + query + ". Displaying results.";
+                window.open(`https://google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                response = `Searching database for ${query}. Displaying results in external browser, sir.`;
             }
+            // Open websites
             else if (cmd.includes('open')) {
-                if (cmd.includes('lab')) {
-                    response = "Opening workshop interface. All fabrication units standing by.";
-                } else if (cmd.includes('garage')) {
-                    response = "Opening garage bay. Vehicles ready for deployment.";
+                if (cmd.includes('youtube')) {
+                    window.open('https://youtube.com', '_blank');
+                    response = "Opening YouTube entertainment interface.";
+                } else if (cmd.includes('stark')) {
+                    response = "Accessing Stark Industries mainframe. Security protocols verified. Welcome to the dataspine, sir.";
                 } else {
-                    response = "Accessing requested location, sir.";
+                    response = "Accessing requested location. Security clearance verified.";
                 }
             }
-            else if (cmd.includes('status')) {
-                response = "All systems optimal. Power at 98%. Hand tracking active. Voice recognition online. No threats detected. You are secure, sir.";
+            // Calculate
+            else if (cmd.includes('calculate')) {
+                try {
+                    const expr = cmd.replace(/[^0-9+\-*/.]/g, '');
+                    const result = eval(expr);
+                    response = `Calculation complete. The result is ${result}.`;
+                } catch {
+                    response = "I'm sorry, sir. I couldn't process that calculation.";
+                }
             }
+            // Jokes
             else if (cmd.includes('joke')) {
-                response = "Why do programmers prefer dark mode? Because light attracts bugs, sir.";
+                const jokes = [
+                    "Why don't scientists trust atoms? Because they make up everything, sir.",
+                    "I tried to catch fog yesterday. Mist.",
+                    "Why did the scarecrow win an award? Because he was outstanding in his field.",
+                    "I would tell you a construction joke, but I'm still working on it."
+                ];
+                response = jokes[Math.floor(Math.random() * jokes.length)];
             }
+            // Shutdown
             else if (cmd.includes('shutdown') || cmd.includes('sleep')) {
-                response = "Entering low power mode. I will maintain security protocols. Goodnight, sir.";
-                setTimeout(emergencyStop, 2000);
+                response = "Entering low power mode. I will maintain security protocols and monitoring systems. Goodnight, sir.";
+                setTimeout(emergencyStop, 3000);
             }
+            // Help
+            else if (cmd.includes('help')) {
+                response = "I can provide suit diagnostics, environmental data, control workshop systems, search databases, perform calculations, and manage communications. I also respond to hand gestures when optical tracking is enabled.";
+            }
+            // Unknown
             else {
-                response = "I understand, sir. Processing your request through the mainframe.";
+                response = "I understand, sir. Processing your request through the mainframe. Is there anything specific you would like me to analyze?";
             }
             
-            document.getElementById('rspText').textContent = response;
+            document.getElementById('responseText').textContent = response;
             speak(response);
+        }
+        
+        // House Party Protocol - Iron Man 3 Style
+        function housePartyProtocol() {
+            updateStatus('HOUSE PARTY PROTOCOL');
+            speak("Initiating House Party Protocol. Calling all Iron Legion suits to active status. Remote control interface established. All units reporting for duty, sir.");
+            
+            // Visual feedback
+            document.querySelector('.arc-reactor-container').style.animation = 'shake 0.5s';
+            setTimeout(() => {
+                document.querySelector('.arc-reactor-container').style.animation = '';
+            }, 500);
+        }
+        
+        function togglePowerMode() {
+            speak("Toggling suit power modes. Currently at normal operation. Available modes: Stealth, Combat, Flight, and Maximum Power.");
         }
         
         // Utility Functions
@@ -1121,34 +1450,42 @@
         }
         
         function showGestures() {
-            const guide = document.getElementById('gestureGuide');
-            guide.classList.toggle('active');
-            if (guide.classList.contains('active')) {
-                speak("Displaying gesture controls. Raise index finger to activate voice. Closed fist to stop. Open palm for menu.");
+            const overlay = document.getElementById('gestureOverlay');
+            overlay.classList.toggle('active');
+            if (overlay.classList.contains('active')) {
+                speak("Displaying gesture control reference. Index finger to activate voice. Fist for emergency stop. Open palm for menu. Thumbs up for House Party Protocol.");
             }
         }
         
         function emergencyStop() {
-            if (isListening) toggleVoice();
-            if (isHandTracking) stopHandTracking();
-            updateStatus('STANDBY MODE');
-            document.getElementById('cmdText').textContent = 'Waiting for input...';
-            document.getElementById('rspText').textContent = '';
-            speak("Emergency stop executed. All systems in standby.");
+            if (state.isListening) toggleVoice();
+            if (state.isHandTracking) stopHandTracking();
+            updateStatus('EMERGENCY STOP');
+            document.getElementById('commandText').textContent = 'Systems halted';
+            document.getElementById('responseText').textContent = '';
+            speak("Emergency stop executed. All active systems halted. Entering safe mode.");
+            setTimeout(() => updateStatus('STANDBY MODE'), 2000);
         }
         
+        // Text to Speech - Paul Bettany Style
         function speak(text) {
-            if (synth.speaking) synth.cancel();
+            if (state.synth.speaking) state.synth.cancel();
+            
             const utter = new SpeechSynthesisUtterance(text);
             utter.rate = 0.9;
-            utter.pitch = 0.9;
+            utter.pitch = 0.85;
             utter.volume = 1;
             
-            const voices = synth.getVoices();
-            const british = voices.find(v => v.lang.includes('en-GB')) || voices[0];
+            // Try to find British male voice
+            const voices = state.synth.getVoices();
+            const british = voices.find(v => v.lang.includes('en-GB') && v.name.includes('Male')) ||
+                           voices.find(v => v.lang.includes('en-GB')) ||
+                           voices.find(v => v.name.includes('Google UK English Male')) ||
+                           voices[0];
+            
             if (british) utter.voice = british;
             
-            synth.speak(utter);
+            state.synth.speak(utter);
         }
         
         // Keyboard Shortcuts
@@ -1156,8 +1493,14 @@
             if (e.code === 'Space') toggleVoice();
             if (e.code === 'KeyH') toggleHandTracking();
             if (e.code === 'KeyG') showGestures();
+            if (e.code === 'KeyP') housePartyProtocol();
             if (e.code === 'Escape') emergencyStop();
         });
+        
+        // Load voices
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => state.synth.getVoices();
+        }
     </script>
 </body>
 </html>
