@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S - Just A Rather Very Intelligent System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #000 70%);
+            z-index: -2;
+        }
+        
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+        }
+        
+        /* Particles */
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: float 10s infinite;
+            opacity: 0.6;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+        
+        /* Main Container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* JARVIS Core */
+        .jarvis-core {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .core-ring {
+            position: absolute;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            animation: rotate 10s linear infinite;
+        }
+        
+        .ring-1 { width: 100%; height: 100%; animation-duration: 10s; }
+        .ring-2 { width: 80%; height: 80%; animation-duration: 15s; animation-direction: reverse; border-color: rgba(0, 212, 255, 0.5); }
+        .ring-3 { width: 60%; height: 60%; animation-duration: 8s; border-color: rgba(0, 212, 255, 0.7); }
+        .ring-4 { width: 40%; height: 40%; animation-duration: 12s; animation-direction: reverse; border-color: #00d4ff; }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .core-center {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #00d4ff 0%, #0066ff 50%, transparent 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #00d4ff, 0 0 100px #0066ff;
+            animation: pulse 2s ease-in-out infinite;
+            position: relative;
+        }
+        
+        .core-center::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #fff;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        
+        /* Voice Wave Animation */
+        .voice-waves {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        .voice-waves.active {
+            display: block;
+        }
+        
+        .wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #00d4ff;
+            border-radius: 50%;
+            opacity: 0;
+        }
+        
+        .wave-1 { animation: wave 1.5s infinite; }
+        .wave-2 { animation: wave 1.5s infinite 0.5s; }
+        .wave-3 { animation: wave 1.5s infinite 1s; }
+        
+        @keyframes wave {
+            0% { width: 80px; height: 80px; opacity: 1; }
+            100% { width: 400px; height: 400px; opacity: 0; }
+        }
+        
+        /* Status Text */
+        .status-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .jarvis-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 10px;
+            color: #00d4ff;
+            text-shadow: 0 0 20px #00d4ff, 0 0 40px #0066ff;
+            margin-bottom: 10px;
+            animation: flicker 3s infinite;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #888;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+        
+        .status-text {
+            font-size: 1.5rem;
+            color: #00d4ff;
+            margin-top: 20px;
+            min-height: 40px;
+            text-shadow: 0 0 10px #00d4ff;
+        }
+        
+        /* Command Display */
+        .command-display {
+            width: 80%;
+            max-width: 800px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid #00d4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+        }
+        
+        .command-label {
+            color: #00d4ff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .command-text {
+            font-size: 1.3rem;
+            color: #fff;
+            min-height: 30px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .response-text {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
+            font-size: 1.1rem;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid #00d4ff;
+            color: #00d4ff;
+            padding: 15px 40px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            background: #00d4ff;
+            color: #000;
+            box-shadow: 0 0 30px #00d4ff;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn.active {
+            background: #00d4ff;
+            color: #000;
+            animation: btnPulse 1s infinite;
+        }
+        
+        @keyframes btnPulse {
+            0%, 100% { box-shadow: 0 0 20px #00d4ff; }
+            50% { box-shadow: 0 0 40px #00d4ff, 0 0 60px #00d4ff; }
+        }
+        
+        /* HUD Elements */
+        .hud-corner {
+            position: fixed;
+            width: 150px;
+            height: 150px;
+            border: 2px solid rgba(0, 212, 255, 0.5);
+        }
+        
+        .hud-tl { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .hud-tr { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .hud-bl { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .hud-br { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+        
+        .hud-data {
+            position: fixed;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #00d4ff;
+        }
+        
+        .hud-time { top: 30px; left: 40px; }
+        .hud-date { top: 50px; left: 40px; }
+        .hud-temp { top: 30px; right: 40px; }
+        .hud-cpu { bottom: 30px; left: 40px; }
+        .hud-memory { bottom: 30px; right: 40px; }
+        
+        /* System Log */
+        .system-log {
+            position: fixed;
+            bottom: 180px;
+            left: 40px;
+            width: 300px;
+            height: 200px;
+            background: rgba(0, 10, 20, 0.9);
+            border: 1px solid #00d4ff;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            color: #00ff88;
+        }
+        
+        .log-entry.error { color: #ff0044; }
+        .log-entry.warning { color: #ffaa00; }
+        
+        /* Scanning Line */
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #00d4ff;
+            box-shadow: 0 0 10px #00d4ff;
+            animation: scan 4s linear infinite;
+            opacity: 0.5;
+            z-index: 100;
+        }
+        
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        
+        /* Boot Sequence Overlay */
+        .boot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .boot-text {
+            color: #00d4ff;
+            font-size: 1.2rem;
+            margin: 5px 0;
+            opacity: 0;
+        }
+        
+        .boot-line {
+            width: 0;
+            height: 2px;
+            background: #00d4ff;
+            margin-top: 20px;
+            transition: width 0.1s;
+        }
+        
+        /* Hidden on start */
+        .hidden { display: none !important; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .jarvis-title { font-size: 2rem; letter-spacing: 5px; }
+            .jarvis-core { width: 200px; height: 200px; }
+            .system-log { width: 200px; height: 150px; left: 20px; }
+            .hud-corner { width: 80px; height: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Boot Sequence -->
+    <div class="boot-overlay" id="bootOverlay">
+        <div class="boot-text" id="bootText1">INITIALIZING J.A.R.V.I.S SYSTEM...</div>
+        <div class="boot-text" id="bootText2">LOADING NEURAL NETWORK...</div>
+        <div class="boot-text" id="bootText3">CALIBRATING VOICE RECOGNITION...</div>
+        <div class="boot-text" id="bootText4">ESTABLISHING SECURE CONNECTION...</div>
+        <div class="boot-text" id="bootText5">WELCOME BACK, SIR</div>
+        <div class="boot-line" id="bootLine"></div>
+    </div>
+
+    <!-- Background Elements -->
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+    <div class="particles" id="particles"></div>
+    <div class="scan-line"></div>
+    
+    <!-- HUD Corners -->
+    <div class="hud-corner hud-tl"></div>
+    <div class="hud-corner hud-tr"></div>
+    <div class="hud-corner hud-bl"></div>
+    <div class="hud-corner hud-br"></div>
+    
+    <!-- HUD Data -->
+    <div class="hud-data hud-time" id="hudTime">00:00:00</div>
+    <div class="hud-data hud-date" id="hudDate">DAY-MON-YEAR</div>
+    <div class="hud-data hud-temp">SYS: 42°C</div>
+    <div class="hud-data hud-cpu">CPU: 12%</div>
+    <div class="hud-data hud-memory">MEM: 34%</div>
+    
+    <!-- System Log -->
+    <div class="system-log" id="systemLog">
+        <div class="log-entry">> System initialized</div>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="container">
+        <!-- JARVIS Core -->
+        <div class="jarvis-core">
+            <div class="core-ring ring-1"></div>
+            <div class="core-ring ring-2"></div>
+            <div class="core-ring ring-3"></div>
+            <div class="core-ring ring-4"></div>
+            <div class="core-center"></div>
+            
+            <!-- Voice Waves -->
+            <div class="voice-waves" id="voiceWaves">
+                <div class="wave wave-1"></div>
+                <div class="wave wave-2"></div>
+                <div class="wave wave-3"></div>
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="status-container">
+            <div class="jarvis-title">J.A.R.V.I.S</div>
+            <div class="subtitle">Just A Rather Very Intelligent System</div>
+            <div class="status-text" id="statusText">Standby Mode</div>
+        </div>
+        
+        <!-- Command Display -->
+        <div class="command-display">
+            <div class="command-label">
+                <span>◉</span> COMMAND INPUT
+            </div>
+            <div class="command-text" id="commandText">Waiting for voice command...</div>
+            <div class="response-text" id="responseText"></div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn" id="startBtn" onclick="toggleListening()">
+                ACTIVATE
+            </button>
+            <button class="btn" onclick="stopJARVIS()">
+                STANDBY
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global Variables
+        let recognition;
+        let isListening = false;
+        let synth = window.speechSynthesis;
+        let voices = [];
+        
+        // Boot Sequence
+        window.onload = function() {
+            createParticles();
+            runBootSequence();
+            updateHUD();
+            setInterval(updateHUD, 1000);
+            loadVoices();
+        };
+        
+        // Boot Animation
+        function runBootSequence() {
+            const texts = ['bootText1', 'bootText2', 'bootText3', 'bootText4', 'bootText5'];
+            const bootLine = document.getElementById('bootLine');
+            let delay = 0;
+            
+            texts.forEach((id, index) => {
+                setTimeout(() => {
+                    document.getElementById(id).style.opacity = '1';
+                    bootLine.style.width = ((index + 1) / texts.length * 300) + 'px';
+                }, delay);
+                delay += 800;
+            });
+            
+            setTimeout(() => {
+                document.getElementById('bootOverlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('bootOverlay').classList.add('hidden');
+                    speak("Welcome back, sir. JARVIS at your service. All systems are operational.");
+                    addLog("JARVIS online - All systems nominal");
+                }, 500);
+            }, delay + 1000);
+        }
+        
+        // Create Particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Update HUD
+        function updateHUD() {
+            const now = new Date();
+            document.getElementById('hudTime').textContent = now.toLocaleTimeString('en-US', {hour12: false});
+            document.getElementById('hudDate').textContent = now.toLocaleDateString('en-US', {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'}).toUpperCase();
+            
+            // Simulate CPU/Memory fluctuations
+            document.querySelector('.hud-cpu').textContent = 'CPU: ' + Math.floor(Math.random() * 30 + 10) + '%';
+            document.querySelector('.hud-memory').textContent = 'MEM: ' + Math.floor(Math.random() * 20 + 20) + '%';
+        }
+        
+        // Initialize Speech Recognition
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    isListening = true;
+                    document.getElementById('startBtn').classList.add('active');
+                    document.getElementById('statusText').textContent = 'Listening...';
+                    document.getElementById('voiceWaves').classList.add('active');
+                    addLog("Voice recognition activated");
+                };
+                
+                recognition.onresult = function(event) {
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    if (interimTranscript) {
+                        document.getElementById('commandText').textContent = interimTranscript;
+                    }
+                    
+                    if (finalTranscript) {
+                        document.getElementById('commandText').textContent = finalTranscript;
+                        processCommand(finalTranscript.toLowerCase());
+                    }
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    addLog("Error: " + event.error, "error");
+                };
+                
+                recognition.onend = function() {
+                    if (isListening) {
+                        recognition.start(); // Restart if still supposed to be listening
+                    }
+                };
+            } else {
+                speak("Speech recognition is not supported in this browser, sir.");
+                addLog("Speech recognition not supported", "error");
+            }
+        }
+        
+        // Toggle Listening
+        function toggleListening() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+            
+            if (isListening) {
+                recognition.stop();
+                isListening = false;
+                document.getElementById('startBtn').classList.remove('active');
+                document.getElementById('statusText').textContent = 'Standby Mode';
+                document.getElementById('voiceWaves').classList.remove('active');
+                addLog("Voice recognition deactivated");
+            } else {
+                recognition.start();
+            }
+        }
+        
+        // Stop JARVIS
+        function stopJARVIS() {
+            if (recognition && isListening) {
+                recognition.stop();
+                isListening = false;
+                document.getElementById('startBtn').classList.remove('active');
+                document.getElementById('statusText').textContent = 'Standby Mode';
+                document.getElementById('voiceWaves').classList.remove('active');
+                document.getElementById('commandText').textContent = 'Waiting for voice command...';
+                document.getElementById('responseText').textContent = '';
+                speak("Entering standby mode, sir.");
+                addLog("Standby mode activated");
+            }
+        }
+        
+        // Process Commands (JARVIS Intelligence)
+        function processCommand(command) {
+            addLog("Command received: " + command);
+            let response = '';
+            
+            // Greetings
+            if (command.includes('hello') || command.includes('hi') || command.includes('hey jarvis')) {
+                response = "Hello, sir. I am JARVIS, your personal AI assistant. How may I assist you today?";
+            }
+            else if (command.includes('good morning')) {
+                const hour = new Date().getHours();
+                if (hour < 12) response = "Good morning, sir. I hope you slept well. The weather is optimal for outdoor activities.";
+                else response = "Actually, sir, it's past noon. Good afternoon.";
+            }
+            else if (command.includes('good night')) {
+                response = "Good night, sir. I'll maintain security protocols while you rest. Sleep well.";
+            }
+            
+            // Time and Date
+            else if (command.includes('time')) {
+                const now = new Date();
+                response = "The current time is " + now.toLocaleTimeString() + ", sir.";
+            }
+            else if (command.includes('date') || command.includes('day')) {
+                const now = new Date();
+                response = "Today is " + now.toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) + ".";
+            }
+            
+            // Weather (Simulated)
+            else if (command.includes('weather')) {
+                response = "Currently, it's 72 degrees Fahrenheit with clear skies. There is a 0% chance of precipitation. It's a perfect day, sir.";
+            }
+            
+            // System Status
+            else if (command.includes('status') || command.includes('system')) {
+                response = "All systems are operating at optimal efficiency. CPU usage is at 12%, memory at 34%. No anomalies detected.";
+            }
+            
+            // Internet/Search
+            else if (command.includes('search') || command.includes('google') || command.includes('find')) {
+                const query = command.replace(/search|google|find|for/g, '').trim();
+                if (query) {
+                    window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank');
+                    response = "Searching for " + query + ". Results displayed in browser, sir.";
+                } else {
+                    response = "What would you like me to search for, sir?";
+                }
+            }
+            
+            // Open Websites
+            else if (command.includes('open')) {
+                if (command.includes('youtube')) {
+                    window.open('https://www.youtube.com', '_blank');
+                    response = "Opening YouTube, sir.";
+                }
+                else if (command.includes('gmail') || command.includes('email')) {
+                    window.open('https://mail.google.com', '_blank');
+                    response = "Opening Gmail, sir.";
+                }
+                else if (command.includes('maps')) {
+                    window.open('https://maps.google.com', '_blank');
+                    response = "Opening Google Maps, sir.";
+                }
+                else if (command.includes('netflix')) {
+                    window.open('https://www.netflix.com', '_blank');
+                    response = "Opening Netflix for your entertainment, sir.";
+                }
+                else {
+                    response = "Which website would you like me to open, sir?";
+                }
+            }
+            
+            // Calculator
+            else if (command.includes('calculate') || command.includes('what is') || command.includes('how much')) {
+                const mathExpr = command.replace(/calculate|what is|how much|jarvis/g, '').trim();
+                try {
+                    // Basic math parsing
+                    const result = eval(mathExpr.replace(/[^0-9+\-*/.]/g, ''));
+                    if (!isNaN(result)) {
+                        response = "The result is " + result + ", sir.";
+                    } else {
+                        response = "I'm sorry, I couldn't calculate that, sir.";
+                    }
+                } catch (e) {
+                    response = "I'm sorry, I couldn't process that calculation, sir.";
+                }
+            }
+            
+            // Jokes
+            else if (command.includes('joke')) {
+                const jokes = [
+                    "Why don't scientists trust atoms? Because they make up everything, sir.",
+                    "Why did the scarecrow win an award? Because he was outstanding in his field, sir.",
+                    "Why don't eggs tell jokes? They'd crack each other up, sir.",
+                    "What do you call a fake noodle? An impasta, sir."
+                ];
+                response = jokes[Math.floor(Math.random() * jokes.length)];
+            }
+            
+            // Motivation
+            else if (command.includes('motivate') || command.includes('inspire')) {
+                response = "Sir, you are Iron Man. You have created a suit of armor around the world. There is nothing you cannot achieve. Remember, the fact that you can build this in a cave with a box of scraps says everything about your capabilities.";
+            }
+            
+            // Self-destruct (Easter Egg)
+            else if (command.includes('self destruct')) {
+                response = "Self-destruct sequence initiated. T minus 10 seconds. Just kidding, sir. That would be counterproductive.";
+            }
+            
+            // Shutdown
+            else if (command.includes('shutdown') || command.includes('sleep')) {
+                response = "Shutting down systems. Goodbye, sir.";
+                setTimeout(() => {
+                    stopJARVIS();
+                }, 2000);
+            }
+            
+            // Help
+            else if (command.includes('help') || command.includes('what can you do')) {
+                response = "I can tell you the time and date, check the weather, search the internet, open websites, perform calculations, tell jokes, and maintain your systems. Just speak naturally, sir.";
+            }
+            
+            // Unknown Command
+            else {
+                response = "I'm sorry, sir. I didn't quite catch that. Could you please repeat the command?";
+            }
+            
+            document.getElementById('responseText').textContent = response;
+            speak(response);
+            addLog("Response: " + response);
+        }
+        
+        // Text to Speech
+        function speak(text) {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 0.9;
+            utterance.volume = 1;
+            
+            // Try to find a British male voice (like Paul Bettany)
+            const britishVoice = voices.find(voice => 
+                voice.lang.includes('en-GB') && voice.name.includes('Male')
+            ) || voices.find(voice => 
+                voice.lang.includes('en-GB')
+            ) || voices.find(voice => 
+                voice.name.includes('Google UK English Male')
+            ) || voices[0];
+            
+            if (britishVoice) {
+                utterance.voice = britishVoice;
+            }
+            
+            synth.speak(utterance);
+        }
+        
+        // Load Voices
+        function loadVoices() {
+            voices = synth.getVoices();
+            if (voices.length === 0) {
+                synth.onvoiceschanged = () => {
+                    voices = synth.getVoices();
+                };
+            }
+        }
+        
+        // Add Log Entry
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('systemLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] > ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Keyboard Shortcut
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target === document.body) {
+                e.preventDefault();
+                toggleListening();
+            }
+        });
+    </script>
+</body>
+</html>
